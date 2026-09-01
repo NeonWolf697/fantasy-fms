@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#111111">
+
+```
+<title>FMS Fantasy</title>
+
+<link rel="stylesheet" href="css/style.css">
+```
+
+</head>
+
+<body>
+
+```
+<!-- =========================================================
+     LOADING GLOBAL
+========================================================== -->
+<div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner"></div>
+    <p id="loading-message">Cargando...</p>
+</div>
+
+
+<!-- =========================================================
+     AUTENTICACIÓN
+========================================================== -->
+<section id="auth-screen" class="screen">
+
+    <div class="auth-container">
+
+        <header class="auth-header">
+            <h1>FMS Fantasy</h1>
+            <p>Construye tu equipo. Compite. Domina la liga.</p>
+        </header>
+
+
+        <!-- =================================================
+             LOGIN
+        ================================================== -->
+        <div id="login-view" class="auth-view">
+
+            <form id="login-form">
+
+                <div class="input-group">
+                    <label for="login-email">Email</label>
+                    <input
+                        type="email"
+                        id="login-email"
+                        name="email"
+                        autocomplete="email"
+                        placeholder="tu@email.com"
+                        required
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="login-password">Contraseña</label>
+                    <input
+                        type="password"
+                        id="login-password"
+                        name="password"
+                        autocomplete="current-password"
+                        placeholder="Tu contraseña"
+                        required
+                    >
+                </div>
+
+                <button type="submit">
+                    Iniciar sesión
+                </button>
+
+            </form>
+
+            <div class="auth-links">
+                <button type="button" id="show-register">
+                    Crear cuenta
+                </button>
+
+                <button type="button" id="show-reset">
+                    ¿Has olvidado tu contraseña?
+                </button>
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             REGISTRO
+        ================================================== -->
+        <div id="register-view" class="auth-view" style="display: none;">
+
+            <form id="register-form">
+
+                <div class="input-group">
+                    <label for="register-username">Nombre de usuario</label>
+                    <input
+                        type="text"
+                        id="register-username"
+                        name="username"
+                        autocomplete="username"
+                        minlength="3"
+                        maxlength="20"
+                        pattern="[a-zA-Z0-9_-]{3,20}"
+                        placeholder="Tu nombre de usuario"
+                        required
+                    >
+                    <small>
+                        3-20 caracteres: letras, números, _ o -
+                    </small>
+                </div>
+
+                <div class="input-group">
+                    <label for="register-email">Email</label>
+                    <input
+                        type="email"
+                        id="register-email"
+                        name="email"
+                        autocomplete="email"
+                        placeholder="tu@email.com"
+                        required
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="register-password">Contraseña</label>
+                    <input
+                        type="password"
+                        id="register-password"
+                        name="password"
+                        autocomplete="new-password"
+                        minlength="6"
+                        placeholder="Mínimo 6 caracteres"
+                        required
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="register-password-confirm">
+                        Repetir contraseña
+                    </label>
+
+                    <input
+                        type="password"
+                        id="register-password-confirm"
+                        name="password-confirm"
+                        autocomplete="new-password"
+                        minlength="6"
+                        placeholder="Repite tu contraseña"
+                        required
+                    >
+                </div>
+
+                <button type="submit">
+                    Crear cuenta
+                </button>
+
+            </form>
+
+            <div class="auth-links">
+                <button type="button" id="show-login">
+                    Ya tengo una cuenta
+                </button>
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             RECUPERAR CONTRASEÑA
+        ================================================== -->
+        <div id="reset-view" class="auth-view" style="display: none;">
+
+            <form id="reset-form">
+
+                <div class="input-group">
+                    <label for="reset-email">Email</label>
+
+                    <input
+                        type="email"
+                        id="reset-email"
+                        name="email"
+                        autocomplete="email"
+                        placeholder="tu@email.com"
+                        required
+                    >
+                </div>
+
+                <button type="submit">
+                    Enviar email de recuperación
+                </button>
+
+            </form>
+
+            <div class="auth-links">
+                <button type="button" id="show-login-from-reset">
+                    Volver al login
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     APLICACIÓN PRINCIPAL
+========================================================== -->
+<section id="main-app" class="screen" style="display: none;">
+
+    <header class="app-header">
+
+        <div class="app-brand">
+            <h1>FMS Fantasy</h1>
+        </div>
+
+        <div class="user-area">
+            <span id="header-username">Jugador</span>
+
+            <button
+                type="button"
+                id="btn-logout"
+                aria-label="Cerrar sesión"
+            >
+                Cerrar sesión
+            </button>
+        </div>
+
+    </header>
+
+
+    <main class="app-content">
+
+        <!-- ===============================================
+             DASHBOARD
+        ================================================ -->
+        <section id="dashboard-section">
+
+            <div class="section-header">
+                <h2>Inicio</h2>
+                <p>Bienvenido a FMS Fantasy.</p>
+            </div>
+
+            <div id="user-summary">
+
+                <div class="summary-card">
+                    <span class="summary-label">Usuario</span>
+                    <strong id="profile-username">-</strong>
+                </div>
+
+                <div class="summary-card">
+                    <span class="summary-label">Equipo</span>
+                    <strong id="profile-team-name">-</strong>
+                </div>
+
+                <div class="summary-card">
+                    <span class="summary-label">Saldo</span>
+                    <strong id="profile-balance">150</strong>
+                </div>
+
+                <div class="summary-card">
+                    <span class="summary-label">Puntos</span>
+                    <strong id="profile-fantasy-points">0</strong>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ===============================================
+             LIGAS
+        ================================================ -->
+        <section id="leagues-section">
+
+            <div class="section-header">
+                <h2>Mis ligas</h2>
+                <p>Compite contra otros jugadores.</p>
+            </div>
+
+
+            <div class="league-actions">
+
+                <button
+                    type="button"
+                    id="btn-show-create-league"
+                >
+                    Crear liga
+                </button>
+
+                <button
+                    type="button"
+                    id="btn-show-join-league"
+                >
+                    Unirse a una liga
+                </button>
+
+            </div>
+
+
+            <!-- CREAR LIGA -->
+
+            <div
+                id="create-league-container"
+                style="display: none;"
+            >
+
+                <form id="create-league-form">
+
+                    <div class="input-group">
+
+                        <label for="create-league-name">
+                            Nombre de la liga
+                        </label>
+
+                        <input
+                            type="text"
+                            id="create-league-name"
+                            name="name"
+                            minlength="3"
+                            maxlength="50"
+                            placeholder="Ej. Liga FMS España"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="input-group">
+
+                        <label for="create-league-max-members">
+                            Máximo de participantes
+                        </label>
+
+                        <input
+                            type="number"
+                            id="create-league-max-members"
+                            name="maxMembers"
+                            min="2"
+                            max="100"
+                            value="16"
+                        >
+
+                    </div>
+
+
+                    <button type="submit">
+                        Crear liga
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- UNIRSE A LIGA -->
+
+            <div
+                id="join-league-container"
+                style="display: none;"
+            >
+
+                <form id="join-league-form">
+
+                    <div class="input-group">
+
+                        <label for="join-league-code">
+                            Código de invitación
+                        </label>
+
+                        <input
+                            type="text"
+                            id="join-league-code"
+                            name="inviteCode"
+                            maxlength="6"
+                            minlength="6"
+                            pattern="[A-Za-z0-9]{6}"
+                            placeholder="Ej. A7K92P"
+                            autocomplete="off"
+                            required
+                        >
+
+                    </div>
+
+
+                    <button type="submit">
+                        Unirse a la liga
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- LISTADO DE LIGAS -->
+
+            <div id="leagues-list">
+
+                <div id="leagues-empty-state">
+                    <p>Aún no perteneces a ninguna liga.</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ===============================================
+             DETALLE DE LIGA
+        ================================================ -->
+        <section
+            id="league-detail-section"
+            style="display: none;"
+        >
+
+            <button
+                type="button"
+                id="btn-back-to-leagues"
+            >
+                ← Volver a mis ligas
+            </button>
+
+            <div id="league-detail">
+
+                <div class="section-header">
+
+                    <h2 id="league-detail-name">
+                        Liga
+                    </h2>
+
+                    <p id="league-detail-info">
+                        Información de la liga
+                    </p>
+
+                </div>
+
+
+                <div class="league-info-grid">
+
+                    <div class="summary-card">
+
+                        <span class="summary-label">
+                            Participantes
+                        </span>
+
+                        <strong id="league-member-count">
+                            0
+                        </strong>
+
+                    </div>
+
+
+                    <div class="summary-card">
+
+                        <span class="summary-label">
+                            Máximo
+                        </span>
+
+                        <strong id="league-max-members">
+                            16
+                        </strong>
+
+                    </div>
+
+
+                    <div class="summary-card">
+
+                        <span class="summary-label">
+                            Código
+                        </span>
+
+                        <strong id="league-invite-code">
+                            -
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div id="league-members">
+
+                    <h3>Clasificación</h3>
+
+                    <div id="league-members-list">
+                        <!-- Los miembros se cargarán mediante JS -->
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ===============================================
+             PERFIL
+        ================================================ -->
+        <section
+            id="profile-section"
+            style="display: none;"
+        >
+
+            <div class="section-header">
+                <h2>Mi perfil</h2>
+            </div>
+
+            <form id="profile-form">
+
+                <div class="input-group">
+
+                    <label for="profile-form-username">
+                        Nombre de usuario
+                    </label>
+
+                    <input
+                        type="text"
+                        id="profile-form-username"
+                        name="username"
+                        readonly
+                    >
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="profile-form-team-name">
+                        Nombre del equipo
+                    </label>
+
+                    <input
+                        type="text"
+                        id="profile-form-team-name"
+                        name="teamName"
+                        maxlength="40"
+                    >
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="profile-form-email">
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="profile-form-email"
+                        name="email"
+                        readonly
+                    >
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
+
+
+    <!-- =====================================================
+         NAVEGACIÓN
+    ====================================================== -->
+
+    <nav id="main-navigation" class="main-navigation">
+
+        <button
+            type="button"
+            id="nav-home"
+        >
+            Inicio
+        </button>
+
+        <button
+            type="button"
+            id="nav-leagues"
+        >
+            Ligas
+        </button>
+
+        <button
+            type="button"
+            id="nav-profile"
+        >
+            Perfil
+        </button>
+
+    </nav>
+
+</section>
+
+
+<!-- =========================================================
+     FIREBASE
+     
+     IMPORTANTE:
+     Firebase Compat se carga antes de nuestros archivos JS.
+========================================================== -->
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js"></script>
+
+
+<!-- =========================================================
+     JAVASCRIPT DE LA APLICACIÓN
+========================================================== -->
+
+<script src="js/firebase.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/leagues.js"></script>
+<script src="js/app.js"></script>
+```
+
+</body>
+</html>
