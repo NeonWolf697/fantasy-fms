@@ -235,3 +235,250 @@ exports.registerUser = functions.https.onCall(async (data, context) => {
         message: 'Usuario registrado correctamente.'
     };
 });
+// ============================================================
+// CLOUD FUNCTION: joinLeague
+// ============================================================
+
+exports.joinLeague = functions.https.onCall(async (data, context) => {
+
+    // --------------------------------------------------------
+    // 1. AUTENTICACIÓN
+    // --------------------------------------------------------
+
+    if (!context.auth) {
+        throw new functions.https.HttpsError(
+            'unauthenticated',
+            'Debes iniciar sesión para unirte a una liga.'
+        );
+    }
+
+    const uid = context.auth.uid;
+
+    // --------------------------------------------------------
+    // 2. VALIDAR CÓDIGO
+    // --------------------------------------------------------
+
+    const inviteCode =
+        typeof data?.inviteCode === 'string'
+            ? data.inviteCode.trim().toUpperCase()
+            : '';
+
+    if (!inviteCode || inviteCode.length !== 6) {
+
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            'El código de invitación no es válido.'
+        );
+    }
+
+    try {
+
+        // ----------------------------------------------------
+        // 3. BUSCAR LIGA POR CÓDIGO
+        // ----------------------------------------------------
+
+        const leaguesSnapshot =
+            await db
+                .collection('leagues')
+                .where(
+                    'inviteCode',
+                    '==',
+                    inviteCode
+                )
+                .limit(1)
+                .get();
+
+        if (leaguesSnapshot.empty) {
+
+            throw new functions.https.HttpsError(
+                'not-found',
+                'No existe ninguna liga con ese código.'
+            );
+        }
+
+        const leagueDoc =
+            leaguesSnapshot.docs[0];
+
+        const leagueRef =
+            leagueDoc.ref;
+
+        const leagueId =
+            leagueDoc.id;
+
+        const memberRef =
+            leagueRef
+                .collection('members')
+                .doc(uid);
+
+        const userRef =
+            db
+                .collection('users')
+                .doc(uid);
+
+        // ----------------------------------------------------
+        // 4. TRANSACCIÓN
+        // ----------------------------------------------------
+
+        await db.runTransaction(
+            async (transaction) => {
+
+                const leagueSnapshot =
+                    await transaction.get(
+                        leagueRef
+                    );
+
+                const memberSnapshot =
+                    await transaction.get(
+                        memberRef
+                    );
+
+                const userSnapshot =
+                    await transaction.get(
+                        userRef
+                    );
+
+                if (!leagueSnapshot.exists) {
+
+                    throw new functions.https.HttpsError(
+                        'not-found',
+                        'La liga ya no existe.'
+                    );
+                }
+
+                if (!userSnapshot.exists) {
+
+                    throw new functions.https.HttpsError(
+                        'not-found',
+                        'Tu perfil de usuario no existe.'
+                    );
+                }
+
+                // --------------------------------------------
+                // Ya es miembro
+                // --------------------------------------------
+
+                if (memberSnapshot.exists) {
+
+                    throw new functions.https.HttpsError(
+                        'already-exists',
+                        'Ya perteneces a esta liga.'
+                    );
+                }
+
+                const leagueData =
+                    leagueSnapshot.data();
+
+                // --------------------------------------------
+                // Comprobar capacidad
+                // --------------------------------------------
+
+                const maxMembers =
+                    Number(
+                        leagueData.maxMembers || 16
+                    );
+
+                const memberCount =
+                    Number(
+                        leagueData.memberCount || 0
+                    );
+
+                if (
+                    memberCount >= maxMembers
+                ) {
+
+                    throw new functions.https.HttpsError(
+                        'resource-exhausted',
+                        'La liga está llena.'
+                    );
+                }
+
+                const userData =
+                    userSnapshot.data();
+
+                // --------------------------------------------
+                // Crear miembro
+                // --------------------------------------------
+
+                transaction.set(
+                    memberRef,
+                    {
+                        uid: uid,
+                        username:
+                            userData.username,
+                        teamName:
+                            userData.teamName ||
+                            `${userData.username} FC`,
+                        joinedAt:
+                            admin.firestore
+                                .FieldValue
+                                .serverTimestamp(),
+                        role: 'member',
+                        points: 0
+                    }
+                );
+
+                // --------------------------------------------
+                // Actualizar contador
+                // --------------------------------------------
+
+                transaction.update(
+                    leagueRef,
+                    {
+                        memberCount:
+                            admin.firestore
+                                .FieldValue
+                                .increment(1)
+                    }
+                );
+
+                // --------------------------------------------
+                // Añadir liga al usuario
+                // --------------------------------------------
+
+                transaction.update(
+                    userRef,
+                    {
+                        leagueIds:
+                            admin.firestore
+                                .FieldValue
+                                .arrayUnion(
+                                    leagueId
+                                )
+                    }
+                );
+            }
+        );
+
+        // ----------------------------------------------------
+        // 5. RESPUESTA
+        // ----------------------------------------------------
+
+        return {
+            success: true,
+            leagueId: leagueId,
+            inviteCode: inviteCode,
+            message:
+                'Te has unido a la liga correctamente.'
+        };
+
+    } catch (error) {
+
+        console.error(
+            '❌ Error en joinLeague:',
+            error
+        );
+
+        // Mantener HttpsErrors que nosotros mismos lanzamos
+        if (
+            error instanceof
+            functions.https.HttpsError
+        ) {
+            throw error;
+        }
+
+        throw new functions.https.HttpsError(
+            'internal',
+            'Error interno al unirse a la liga.'
+        );
+    }
+});
